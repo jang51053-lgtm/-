@@ -3,635 +3,278 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학민증권 시장 - v9.8.1 (Bug Fixed)</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <title>학민정부 공동 게임 개발 사이트</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #0f172a; color: #f8fafc; overflow-x: hidden; }
-        .fantasy-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; }
-        .btn-fantasy { transition: all 0.2s; border-radius: 0.5rem; font-weight: bold; }
-        .btn-fantasy:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .nav-tab { cursor: pointer; transition: all 0.3s; border-bottom: 3px solid transparent; }
-        .nav-tab.active { border-bottom: 3px solid #fbbf24; color: #fbbf24; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .hidden-view { display: none !important; }
-        .student-row { cursor: pointer; transition: background 0.2s; border-radius: 0.75rem; }
-        .student-row:hover { background: rgba(255, 255, 255, 0.08); }
-        .modal-overlay { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); display: none; position: fixed; inset: 0; z-index: 100; align-items: center; justify-content: center; }
-        .modal-content { background: #1e293b; border: 1px solid #334155; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 95%; max-width: 700px; border-radius: 1.5rem; max-height: 95vh; overflow-y: auto; }
-        .phase-badge { padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
-        .phase-morning { background: #f59e0b; color: #fff; }
-        .phase-afternoon { background: #3b82f6; color: #fff; }
-        .phase-night { background: #6366f1; color: #fff; }
-        .admin-only { display: none; }
+        :root {
+            --primary: #0f172a; --sidebar-bg: #1e293b; --accent: #3b82f6; --danger: #ef4444;
+            --warning: #f59e0b; --success: #10b981; --text-light: #f1f5f9; --text-dark: #1e293b;
+            --text-muted: #64748b; --bg-main: #f8fafc; --card-bg: #ffffff; --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1); --sidebar-width: 200px;
+        }
+        * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        body { margin: 0; display: flex; height: 100vh; background: var(--bg-main); color: var(--text-dark); overflow: hidden; }
+        aside { width: var(--sidebar-width); background: var(--sidebar-bg); color: var(--text-light); display: flex; flex-direction: column; transition: 0.3s; flex-shrink: 0; z-index: 50; }
+        .aside-header { padding: 15px 12px; background: rgba(0,0,0,0.3); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .aside-header h2 { margin: 0; font-size: 0.75rem; font-weight: 800; color: var(--accent); text-align: center; letter-spacing: -0.5px; line-height: 1.4; }
+        .special-menu { padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .nav-item { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; border-left: 3px solid transparent; font-size: 0.8rem; color: #94a3b8; }
+        .nav-item:hover { background: rgba(255,255,255,0.05); color: white; }
+        .nav-item.active { background: rgba(59, 130, 246, 0.15); border-left-color: var(--accent); color: white; font-weight: 600; }
+        .nav-item.idea-menu { color: var(--warning); font-weight: 700; }
+        .nav-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 5px; }
+        .nav-actions { display: none; gap: 4px; }
+        .admin-mode .nav-actions { display: flex; }
+        .btn-icon { background: none; border: none; padding: 3px; cursor: pointer; color: inherit; border-radius: 4px; display: flex; align-items: center; opacity: 0.6; }
+        .btn-icon:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        .btn-icon.del:hover { color: var(--danger); }
+        .btn-icon.coin:hover { color: var(--warning); }
+        .add-btn { padding: 10px; margin: 10px 12px 20px; background: var(--accent); color: white; border: none; border-radius: 6px; font-weight: 700; font-size: 0.75rem; cursor: pointer; display: none; }
+        .admin-mode .add-btn { display: block; }
+        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        header { background: white; padding: 0 24px; height: 56px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
+        .top-info h1 { margin: 0; font-size: 1rem; font-weight: 700; color: var(--primary); }
+        .admin-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+        .content-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .quadrant-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1.2fr; gap: 20px; padding: 20px; overflow: hidden; }
+        .idea-board { flex: 1; padding: 20px; overflow-y: auto; }
+        .idea-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid #e2e8f0; padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-start; transition: 0.2s; }
+        .idea-info { flex: 1; }
+        .idea-meta { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.75rem; color: var(--text-muted); }
+        .idea-tag { background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+        .idea-detail { font-size: 0.85rem; line-height: 1.6; color: var(--text-dark); background: #f8fafc; padding: 12px; border-radius: 8px; }
+        .quadrant { background: white; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid #e2e8f0; display: flex; flex-direction: column; overflow: hidden; }
+        .q-header { padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .q-content { flex: 1; padding: 16px; overflow-y: auto; position: relative; }
+        .stars { display: flex; gap: 4px; margin-top: 8px; }
+        .star { cursor: pointer; color: #cbd5e1; font-size: 1.2rem; transition: 0.2s; }
+        .star.filled { color: var(--warning); }
+        .feedback-item { padding: 10px; border-radius: 8px; border: 1px solid #f1f5f9; margin-bottom: 8px; font-size: 0.85rem; border-left: 3px solid #e2e8f0; position: relative; }
+        .feedback-user { font-weight: 700; color: var(--accent); font-size: 0.75rem; margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
+        .feedback-coin-badge { background: #fffbeb; color: #b45309; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 800; border: 1px solid #fde68a; display: flex; align-items: center; gap: 3px; }
+        .feedback-form { margin-top: auto; padding: 12px; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+        .btn { padding: 8px 14px; border-radius: 6px; border: none; font-weight: 700; cursor: pointer; font-size: 0.75rem; transition: 0.2s; }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-sub { background: #e2e8f0; color: var(--text-dark); }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.8rem; margin-bottom: 8px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 420px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .switch { position: relative; display: inline-block; width: 34px; height: 18px; pointer-events: none; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 18px; }
+        .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(16px); }
+        .admin-only { display: none !important; }
+        .admin-mode .admin-only { display: flex !important; }
+        #msgBox { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 2000; padding: 10px 25px; border-radius: 8px; background: var(--primary); color: white; font-size: 0.85rem; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
     </style>
 </head>
-<body class="min-h-screen">
+<body>
 
-    <nav class="sticky top-0 z-50 bg-slate-900/95 border-b border-slate-800 backdrop-blur-md px-6 py-4 font-bold">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <span class="text-3xl font-bold">🏛️</span>
-                <div>
-                    <h1 class="text-xl font-bold text-blue-400 leading-none">학민증권 시장</h1>
-                    <p class="text-[9px] text-slate-500 mt-1 uppercase font-bold tracking-widest">HAKMIN SECURITIES v9.8.1</p>
-                </div>
-            </div>
-            
-            <div class="flex gap-8 font-bold text-slate-400">
-                <div id="tab-market" onclick="switchView('market')" class="nav-tab active py-1">종합 시장</div>
-                <div id="tab-management" onclick="switchView('management')" class="nav-tab py-1 admin-only">학생 관리</div>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <button id="admin-login-btn" onclick="openAdminLoginModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-slate-700">관리자 접속</button>
-                <div class="text-right">
-                    <p id="display-date" class="text-lg font-bold text-white leading-none">제 1 일</p>
-                    <div id="phase-container" class="mt-1">
-                        <span id="display-phase" class="phase-badge phase-morning">오전 대기</span>
-                    </div>
-                </div>
-                <button id="main-step-btn" onclick="handleTimeStep()" class="btn-fantasy bg-blue-600 hover:bg-blue-500 px-6 py-3 text-white text-sm shadow-lg font-bold min-w-[130px] admin-only">오전 장 열기</button>
-            </div>
-        </div>
-    </nav>
-
-    <div class="max-w-6xl mx-auto p-4 md:p-8 font-bold">
-        <div id="view-market" class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in duration-500 text-white font-bold">
-            <div class="lg:col-span-1 space-y-6">
-                <div class="fantasy-card p-6">
-                    <h2 class="text-xl font-bold mb-4 text-blue-400 text-center uppercase tracking-tighter">📈 실시간 시세</h2>
-                    <div class="overflow-x-auto font-bold">
-                        <table class="w-full text-left text-sm font-bold">
-                            <thead>
-                                <tr class="text-slate-400 border-b border-slate-700 text-[10px] uppercase font-bold">
-                                    <th class="pb-3 px-2">종목</th>
-                                    <th class="pb-3 text-right">가격 (C)</th>
-                                    <th class="pb-3 text-right">변동</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stock-list-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="fantasy-card p-6 border-blue-500/30 font-bold">
-                    <h2 class="text-xl font-bold mb-4 text-blue-400 text-center uppercase tracking-tighter italic">🏆 실시간 리더보드</h2>
-                    <div class="space-y-4 font-bold">
-                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 shadow-inner">
-                            <p class="text-[10px] text-slate-500 uppercase mb-1 font-bold">💰 자산 왕</p>
-                            <div class="flex justify-between items-center">
-                                <span id="rank-asset-name" class="text-lg text-white font-bold">미등록</span>
-                                <div class="text-right leading-tight">
-                                    <span id="rank-asset-value" class="text-xl text-blue-400 font-mono font-bold">0.0 C</span>
-                                    <p class="text-[10px] text-blue-600 font-bold">🥇 부자 1위</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 border-emerald-500/30 shadow-inner">
-                            <p class="text-[10px] text-slate-500 uppercase mb-1 font-bold font-bold font-bold font-bold font-bold">📈 수익 왕</p>
-                            <div class="flex justify-between items-center">
-                                <span id="rank-profit-name" class="text-lg text-white font-bold font-bold font-bold font-bold font-bold">미등록</span>
-                                <div class="text-right leading-tight font-bold">
-                                    <span id="rank-profit-value" class="text-xl text-emerald-400 font-mono font-bold font-bold font-bold">+0.0 C</span>
-                                    <p class="text-[10px] text-emerald-600 font-bold font-bold font-bold">🥇 수익 1위</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-2 space-y-6">
-                <div class="fantasy-card p-6 font-bold">
-                    <h2 class="text-xl font-bold mb-4 text-white text-center font-bold">📊 학민증권 주가 분석 차트</h2>
-                    <div class="h-[340px]">
-                        <canvas id="mainChart"></canvas>
-                    </div>
-                </div>
-
-                <div class="fantasy-card p-6 font-bold">
-                    <h2 class="text-xl font-bold mb-4 text-blue-400 text-center border-b border-slate-800 pb-2 font-bold font-bold">📜 시장 긴급 속보</h2>
-                    <div id="news-container" class="h-40 overflow-y-auto space-y-3 text-sm text-slate-300 scrollbar-hide font-bold">
-                        <p class="text-blue-400 text-center pb-2">[알림] 시스템 최적화가 완료되었습니다.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="view-management" class="hidden-view space-y-6 animate-in fade-in duration-500 font-bold">
-            <div class="fantasy-card p-4 border-emerald-500/20 font-bold font-bold font-bold">
-                <h2 class="text-sm font-bold mb-3 text-emerald-400 uppercase tracking-widest font-bold font-bold">👤 모험가 신규 등록 (관리자 권한)</h2>
-                <div class="flex gap-2">
-                    <input type="text" id="new-student-name" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-sm focus:outline-none focus:border-emerald-500 text-white font-bold font-bold" placeholder="학생 이름을 입력하세요">
-                    <button onclick="addStudent()" class="btn-fantasy bg-emerald-600 px-8 py-2 text-white text-sm font-bold font-bold">등록</button>
-                </div>
-            </div>
-
-            <div class="fantasy-card p-6 font-bold font-bold">
-                <h2 class="text-xl font-bold mb-6 text-blue-400 flex justify-between items-center font-bold">
-                    <span>📋 학생 자산 현황 명부</span>
-                    <span class="text-[10px] text-slate-400 font-normal ml-2 italic">이름을 클릭하여 상세 조작 팝업을 여세요.</span>
-                </h2>
-                <div class="overflow-x-auto font-bold font-bold">
-                    <table class="w-full text-left text-sm border-separate border-spacing-y-2">
-                        <thead>
-                            <tr class="text-slate-400 text-[10px] uppercase font-bold">
-                                <th class="px-4 py-2 font-bold font-bold">이름</th>
-                                <th class="px-4 py-2 text-right font-bold font-bold">보유 현금</th>
-                                <th class="px-4 py-2 font-bold font-bold font-bold">보유 주식 내역</th>
-                                <th class="px-4 py-2 text-right font-bold font-bold">총 자산 가치</th>
-                            </tr>
-                        </thead>
-                        <tbody id="student-list-body"></tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+<aside id="sidebar">
+    <div class="aside-header"><h2>학민정부 공동 게임 개발 사이트</h2></div>
+    <div class="special-menu">
+        <div class="nav-item idea-menu" id="ideaMenuBtn" onclick="switchView('ideas')"><span class="nav-text">💡 아이디어 제출 게시판</span></div>
     </div>
+    <div id="navList" class="nav-list"></div>
+    <button class="add-btn" onclick="openModal('createModal')">＋ 새 프로젝트</button>
+</aside>
 
-    <div id="student-modal" class="modal-overlay" onclick="handleOverlayClick(event)">
-        <div class="modal-content animate-in zoom-in duration-200 font-bold">
-            <div class="p-6 md:p-10 space-y-8 text-white font-bold">
-                <div class="flex justify-between items-center border-b border-slate-700 pb-6 font-bold">
-                    <div class="flex items-center gap-4">
-                        <div class="bg-blue-600 p-4 rounded-2xl text-3xl shadow-lg shadow-blue-900/20 text-white font-bold font-bold font-bold">👤</div>
-                        <div>
-                            <h2 id="modal-student-name" class="text-3xl font-bold text-white font-bold">이름</h2>
-                            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold">Portfolio Details</p>
-                        </div>
-                    </div>
-                    <button onclick="closeModal()" class="text-slate-400 hover:text-white text-4xl leading-none transition-colors font-bold font-bold font-bold">&times;</button>
+<main>
+    <header>
+        <div class="top-info"><h1 id="currentPageTitle">불러오는 중...</h1></div>
+        <div class="admin-toggle" onclick="handleAdminClick()">
+            <span>ADMIN</span>
+            <label class="switch"><input type="checkbox" id="adminToggle"><span class="slider"></span></label>
+        </div>
+    </header>
+    <div id="viewContainer" class="content-view"></div>
+</main>
+
+<div id="passwordModal" class="modal"><div class="modal-content"><h3>관리자 비밀번호</h3><input type="password" id="adminPassword" placeholder="비밀번호"><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('passwordModal')">취소</button><button class="btn btn-primary" onclick="checkAdminPassword()">확인</button></div></div></div>
+<div id="confirmDeleteModal" class="modal"><div class="modal-content"><h3 id="deleteTitle">삭제 확인</h3><p id="deleteMessage">정말로 삭제하시겠습니까?</p><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('confirmDeleteModal')">취소</button><button class="btn btn-danger" onclick="executeDelete()">삭제</button></div></div></div>
+<div id="ideaModal" class="modal"><div class="modal-content"><h3>아이디어 제안</h3><input id="ideaUser" placeholder="이름"><input id="ideaUnit" placeholder="단원"><input id="ideaGame" placeholder="게임 형태"><textarea id="ideaLearn" rows="4" placeholder="학습적 요소"></textarea><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('ideaModal')">취소</button><button class="btn btn-primary" onclick="submitIdea()">등록</button></div></div></div>
+<div id="rewardModal" class="modal"><div class="modal-content"><h3>보상 설정</h3><input type="number" id="coinAmount" placeholder="코인 개수"><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('rewardModal')">취소</button><button class="btn btn-warning" onclick="confirmReward()">확정</button></div></div></div>
+<div id="createModal" class="modal"><div class="modal-content"><h3>새 프로젝트</h3><input id="newSubject" placeholder="수학 주제"><input id="newUrl" placeholder="URL"><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('createModal')">취소</button><button class="btn btn-primary" onclick="addPage()">생성</button></div></div></div>
+<div id="editInfoModal" class="modal"><div class="modal-content"><h3>정보 수정</h3><input id="editSubject"><input id="editUrl"><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('editInfoModal')">취소</button><button class="btn btn-primary" onclick="saveInfo()">저장</button></div></div></div>
+<div id="renameModal" class="modal"><div class="modal-content"><h3>이름 변경</h3><input id="renameInput"><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('renameModal')">취소</button><button class="btn btn-primary" onclick="confirmRename()">완료</button></div></div></div>
+<div id="conceptModal" class="modal"><div class="modal-content"><h3>개념 수정</h3><textarea id="editConcept" rows="8"></textarea><div style="display:flex; gap:8px;"><button class="btn btn-sub" onclick="closeModal('conceptModal')">취소</button><button class="btn btn-primary" onclick="saveConcept()">저장</button></div></div></div>
+<div id="msgBox"></div>
+
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyC2e2hooU2u5I0ankKrxvzCDPC0NuAyRCo",
+        authDomain: "hakmin-game.firebaseapp.com",
+        projectId: "hakmin-game",
+        storageBucket: "hakmin-game.firebasestorage.app",
+        messagingSenderId: "886463342397",
+        appId: "1:886463342397:web:f279bd0ad549cbef234754"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let activeView = 'ideas'; let activePageId = null; let isAdminMode = false;
+    let rewardTargetId = null; let renameTargetId = null; let deleteContext = { type: null, id: null, subType: null };
+    let pages = []; let ideas = [];
+
+    function initApp() {
+        db.collection("projects").orderBy("createdAt", "asc").onSnapshot(snapshot => {
+            pages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); render();
+        });
+        db.collection("ideas").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+            ideas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })); render();
+        });
+    }
+
+    function render() { renderSidebar(); renderMain(); }
+
+    function renderSidebar() {
+        const nav = document.getElementById('navList');
+        const ideaBtn = document.getElementById('ideaMenuBtn');
+        ideaBtn.className = `nav-item idea-menu ${activeView === 'ideas' ? 'active' : ''}`;
+        nav.innerHTML = pages.map(p => `
+            <div class="nav-item ${activeView === 'project' && p.id === activePageId ? 'active' : ''}" onclick="switchView('project', '${p.id}')">
+                <span class="nav-text">${p.subject}</span>
+                <div class="nav-actions">
+                    <button class="btn-icon" onclick="event.stopPropagation(); openRenameModal('${p.id}')">✎</button>
+                    <button class="btn-icon del" onclick="event.stopPropagation(); openDeleteModal('project', '${p.id}')">✕</button>
                 </div>
+            </div>`).join('');
+    }
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 admin-only font-bold">
-                    <div class="space-y-4">
-                        <h3 class="text-emerald-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400 font-bold"></span> 현금 조정
-                        </h3>
-                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 space-y-6 font-bold">
-                            <div class="text-center font-bold">
-                                <p class="text-[10px] text-slate-500 uppercase font-bold mb-1 font-bold">현재 지갑 잔고</p>
-                                <p class="text-4xl font-mono font-bold text-white font-bold"><span id="modal-cash-display">0.0</span> <small class="text-lg text-blue-500 font-bold">C</small></p>
-                            </div>
-                            <div class="space-y-4 font-bold font-bold font-bold font-bold">
-                                <input type="number" id="modal-amount-input" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-center font-bold text-xl focus:outline-none focus:border-emerald-500 text-white font-bold font-bold" placeholder="0.0">
-                                <button onclick="adjustAsset('cash')" class="w-full bg-emerald-600 hover:bg-emerald-500 py-4 rounded-xl font-bold text-sm text-white shadow-lg transition-all active:scale-95 font-bold font-bold">수정 적용</button>
-                                <p class="text-[9px] text-center text-slate-500 italic font-normal">* 10일마다 잔액의 10%가 이자로 추가됩니다.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 font-bold">
-                        <h3 class="text-blue-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2 font-bold font-bold">
-                            <span class="w-2 h-2 rounded-full bg-blue-400 font-bold"></span> 즉석 거래
-                        </h3>
-                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-700 space-y-5 font-bold font-bold">
-                            <div>
-                                <select id="modal-trade-stock-id" onchange="updateTradePrice()" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-blue-500 cursor-pointer text-white font-bold font-bold"></select>
-                                <div class="flex justify-between items-center mt-2 px-1">
-                                    <span class="text-[10px] text-slate-500 font-bold uppercase font-bold font-bold">가격</span>
-                                    <span id="modal-current-price-badge" class="bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-xs font-mono font-bold border border-blue-500/30 font-bold">0.0 C</span>
-                                </div>
-                            </div>
-                            <input type="number" id="modal-trade-quantity" min="1" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-center font-bold text-xl focus:outline-none focus:border-blue-500 text-white font-bold font-bold" placeholder="0">
-                            <div class="grid grid-cols-2 gap-3 pt-2">
-                                <button onclick="modalTrade('buy')" class="bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-sm shadow-lg text-white font-bold font-bold font-bold">매수</button>
-                                <button onclick="modalTrade('sell')" class="border-2 border-blue-500 text-blue-400 hover:bg-blue-900/30 py-4 rounded-xl font-bold text-sm font-bold font-bold font-bold">매도</button>
-                            </div>
-                            <p class="text-[9px] text-center text-slate-400 italic mt-2 font-normal font-bold font-bold">* 매도 시 수수료 0.1C 발생</p>
-                        </div>
-                    </div>
+    function renderMain() {
+        const container = document.getElementById('viewContainer');
+        const titleEl = document.getElementById('currentPageTitle');
+        if (activeView === 'ideas') {
+            titleEl.innerText = "💡 게임 개발 아이디어 제출";
+            container.innerHTML = `<div class="idea-board">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <p style="font-size:0.9rem; color:var(--text-muted); margin:0;">학생들의 창의적인 수학 게임 아이디어를 모집합니다.</p>
+                    <button class="btn btn-warning" onclick="openModal('ideaModal')">아이디어 제안하기</button>
                 </div>
+                ${ideas.map(idea => `<div class="idea-card">
+                    <div class="idea-info">
+                        <div class="idea-meta"><span class="idea-user">${idea.user}</span><span class="idea-tag">${escapeHtml(idea.unit)}</span><span>추천: ${escapeHtml(idea.game)}</span></div>
+                        <div class="idea-detail">${escapeHtml(idea.learn)}</div>
+                        ${idea.coins > 0 ? `<div class="idea-reward">💰 보상 완료: ${idea.coins} 코인</div>` : ''}
+                    </div>
+                    <div class="admin-only" style="margin-left:20px; display:flex; flex-direction:column; gap:8px;">
+                        <button class="btn btn-warning" onclick="openRewardModal('${idea.id}')">보상</button>
+                        <button class="btn btn-danger" onclick="openDeleteModal('idea', '${idea.id}')">삭제</button>
+                    </div>
+                </div>`).join('')}</div>`;
+        } else {
+            const page = pages.find(p => p.id === activePageId);
+            if (!page) { switchView('ideas'); return; }
+            titleEl.innerText = page.subject;
+            container.innerHTML = `<div class="quadrant-grid">
+                <section class="quadrant">
+                    <div class="q-header"><div class="q-title">🚀 게임 정보</div><button class="btn-icon admin-only" onclick="openModal('editInfoModal')">✎</button></div>
+                    <div class="q-content"><h2>${page.subject}</h2><div class="stars">${[1,2,3,4,5].map(i => `<span class="star ${i <= page.rating ? 'filled' : ''}" onclick="setRating(${i})">★</span>`).join('')}</div>
+                    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-top:20px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.75rem; color:var(--text-muted); overflow:hidden;">${page.url}</span>
+                        <a href="${page.url}" target="_blank" class="btn btn-primary" style="text-decoration:none;">접속</a>
+                    </div></div>
+                </section>
+                <section class="quadrant">
+                    <div class="q-header"><div class="q-title">📐 수학 개념</div><button class="btn-icon admin-only" onclick="openModal('conceptModal')">✎</button></div>
+                    <div class="q-content">${escapeHtml(page.mathConcepts || '미등록')}</div>
+                </section>
+                <section class="quadrant">
+                    <div class="q-header"><div class="q-title">💡 아이디어 & 개선</div></div>
+                    <div class="q-content">${(page.improvements || []).map(i => renderFeedbackItem(i, 'improvements')).join('')}</div>
+                    <div class="feedback-form"><input id="impU" placeholder="이름" style="flex:1"><input id="impT" placeholder="내용" style="flex:3"><button class="btn btn-primary" onclick="addFeedback('improvements')">등록</button></div>
+                </section>
+                <section class="quadrant">
+                    <div class="q-header"><div class="q-title">🐛 버그 신고</div></div>
+                    <div class="q-content">${(page.bugs || []).map(b => renderFeedbackItem(b, 'bugs')).join('')}</div>
+                    <div class="feedback-form"><input id="bugU" placeholder="이름" style="flex:1"><input id="bugT" placeholder="내용" style="flex:3"><button class="btn btn-primary" style="background:var(--danger)" onclick="addFeedback('bugs')">신고</button></div>
+                </section>
+            </div>`;
+        }
+    }
 
-                <div class="space-y-4 font-bold">
-                    <h3 class="text-amber-400 font-bold text-sm uppercase tracking-widest flex items-center gap-2 font-bold font-bold font-bold">
-                        <span class="w-2 h-2 rounded-full bg-amber-400 font-bold"></span> 보유 자산 포트폴리오 (수익: 빨강 / 손실: 파랑)
-                    </h3>
-                    <div id="modal-inventory-list" class="grid grid-cols-1 sm:grid-cols-2 gap-4 font-bold font-bold"></div>
+    // [핵심!!] 코인 표시를 포함한 피드백 아이템 렌더링 함수
+    function renderFeedbackItem(item, type) {
+        return `<div class="feedback-item">
+            <div class="feedback-user">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span>${escapeHtml(item.user)}</span>
+                    ${(item.coins || 0) > 0 ? `<div class="feedback-coin-badge">🪙 ${item.coins}</div>` : ''}
                 </div>
-
-                <div class="flex justify-end pt-6 border-t border-slate-700 admin-only font-bold">
-                    <button onclick="deleteStudentPrompt()" class="text-rose-500 hover:text-rose-400 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                        <span class="text-lg">⚠️</span> 모험가 삭제
-                    </button>
+                <div class="admin-only" style="gap:4px;">
+                    <button class="btn-icon" onclick="giveFeedbackCoin('${type}', '${item.id}')">🪙</button>
+                    <button class="btn-icon del" onclick="openDeleteModal('feedback', '${item.id}', '${type}')">✕</button>
                 </div>
             </div>
-        </div>
-    </div>
+            <div>${escapeHtml(item.text)}</div>
+        </div>`;
+    }
 
-    <div id="admin-modal" class="modal-overlay" onclick="handleAdminOverlayClick(event)">
-        <div class="modal-content animate-in zoom-in duration-200 max-w-[400px] font-bold">
-            <div class="p-8 space-y-6 text-center">
-                <div class="inline-flex bg-blue-600/20 p-4 rounded-full mb-2">
-                    <span class="text-4xl">🔐</span>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold text-white font-bold">관리자 권한 인증</h2>
-                    <p class="text-sm text-slate-400 mt-1 font-bold">접속을 위해 비밀번호를 입력하세요.</p>
-                </div>
-                <div class="space-y-4 font-bold">
-                    <input type="password" id="admin-password-input" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-center text-2xl tracking-[0.5em] focus:outline-none focus:border-blue-500 text-white font-bold font-bold" placeholder="****" onkeypress="handleAdminKey(event)">
-                    <div class="flex gap-2">
-                        <button onclick="closeAdminModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl font-bold text-slate-400 text-sm">취소</button>
-                        <button onclick="checkAdminPassword()" class="flex-2 bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-bold text-white text-sm px-8 shadow-lg shadow-blue-900/20">인증하기</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    async function giveFeedbackCoin(type, fId) {
+        if (!isAdminMode) return;
+        const page = pages.find(p => p.id === activePageId);
+        const newList = page[type].map(f => f.id === fId ? { ...f, coins: (f.coins || 0) + 1 } : f);
+        await db.collection("projects").doc(activePageId).update({ [type]: newList });
+        showMsg("보상 완료! 🪙");
+    }
 
-    <script>
-        let currentDay = 1;
-        let dayPhase = 0; 
-        let isAdmin = false;
-        const ADMIN_PASS = "5105";
-
-        const SETTLEMENT_INTERVAL = 10;
-        const INTEREST_RATE = 0.10;       
-        const MIN_PRICE = 0.1;
-        const EXTREME_CHANCE = 0.15; 
-        const EXTREME_RANGE = 0.50;  
-        const SELL_FEE = 0.1; 
-
-        let stocks = [
-            { id: 'GP', name: '고블린 포션 공장', icon: '🧪', price: 2.5, prev: 2.5, vol: 0.22, trend: 0, history: [2.5], div: false },
-            { id: 'DA', name: '드래곤 항공', icon: '🐉', price: 4.0, prev: 4.0, vol: 0.20, trend: 0, history: [4.0], div: false },
-            { id: 'SF', name: '슬라임 푸드', icon: '🍮', price: 2.0, prev: 2.0, vol: 0.22, trend: 0, history: [2.0], div: true },
-            { id: 'HW', name: '호두와트 지팡이', icon: '🪄', price: 7.5, prev: 7.5, vol: 0.18, trend: 0, history: [7.5], div: false },
-            { id: 'HA', name: '용사 모집 협회', icon: '⚔️', price: 2.5, prev: 2.5, vol: 0.32, trend: 0, history: [2.5], div: true }
-        ];
-
-        const newsPool = {
-            general: ["왕국의 마법 시장이 새로운 기운으로 가득합니다.", "광장에 황금 비가 내려 자산 가치가 요동칩니다.", "마왕군의 소문이 들리며 투자자들이 분주해집니다.", "왕실 축제 예산 편성으로 소비가 폭발합니다."],
-            surge: { GP: "전설의 마나 샘 발견! 생산 효율이 급등합니다.", DA: "신형 황금 드래곤 도입! 여행 수요가 최고치입니다.", SF: "슬라임 축제 시즌! 푸딩 주문이 쏟아집니다.", HW: "마법 학교 개강! 지팡이 품귀 현상이 벌어집니다.", HA: "용사 등급 상향 평준화! 협회의 위상이 높아집니다." },
-            crash: { GP: "가마솥 대폭발 사고! 생산 라인이 일시 마비됩니다.", DA: "드래곤 집단 독감 발병! 모든 노선이 결항되었습니다.", SF: "푸딩 마법 유통 기한 오류! 전량 회수 명령 발생.", HW: "암시장에 짝퉁 지팡이 대량 유통! 브랜드 가치 하락.", HA: "운영진 횡령 의혹 보도! 용사들이 집단 탈퇴합니다." }
-        };
-
-        let students = []; 
-        let activeStudentIndex = null;
-        let chart;
-
-        window.onload = () => {
-            initChart();
-            populateSelects(); 
-            loadData();
-            updateUI();
-        };
-
-        function openAdminLoginModal() {
-            if (isAdmin) {
-                if (confirm("관리자 모드를 해제하시겠습니까?")) {
-                    isAdmin = false;
-                    document.getElementById('admin-login-btn').innerText = "관리자 접속";
-                    applyAdminUI();
-                    switchView('market');
-                }
-                return;
-            }
-            document.getElementById('admin-password-input').value = "";
-            document.getElementById('admin-modal').style.display = 'flex';
-            document.getElementById('admin-password-input').focus();
-        }
-
-        function closeAdminModal() { document.getElementById('admin-modal').style.display = 'none'; }
-        function handleAdminOverlayClick(e) { if(e.target.id === 'admin-modal') closeAdminModal(); }
-        function handleAdminKey(e) { if(e.key === 'Enter') checkAdminPassword(); }
-
-        function checkAdminPassword() {
-            const pw = document.getElementById('admin-password-input').value;
-            if (pw === ADMIN_PASS) {
-                isAdmin = true;
-                document.getElementById('admin-login-btn').innerText = "관리자 로그아웃";
-                applyAdminUI();
-                closeAdminModal();
-                alert("관리자 권한이 승인되었습니다.");
-            } else {
-                alert("비밀번호가 틀렸습니다.");
-                document.getElementById('admin-password-input').value = "";
-                document.getElementById('admin-password-input').focus();
-            }
-        }
-
-        function applyAdminUI() {
-            const elements = document.querySelectorAll('.admin-only');
-            elements.forEach(el => {
-                el.style.display = isAdmin ? 'block' : 'none';
-                if (el.tagName === 'DIV' && isAdmin) el.style.display = 'block';
-            });
-        }
-
-        function switchView(viewName) {
-            if (viewName === 'management' && !isAdmin) { alert("관리자만 접근할 수 있습니다."); return; }
-            document.getElementById('view-market').classList.toggle('hidden-view', viewName !== 'market');
-            document.getElementById('view-management').classList.toggle('hidden-view', viewName !== 'management');
-            document.getElementById('tab-market').classList.toggle('active', viewName === 'market');
-            document.getElementById('tab-management').classList.toggle('active', viewName === 'management');
-            if(viewName === 'management') renderStudentList();
-            if(viewName === 'market') renderRankings();
-        }
-
-        function handleTimeStep() {
-            if (!isAdmin) return;
-            if (dayPhase === 0) { triggerPriceChange("오전"); dayPhase = 1; }
-            else if (dayPhase === 1) { triggerPriceChange("오후"); dayPhase = 2; }
-            else if (dayPhase === 2) { dayPhase = 0; processDailySettlement(); }
-            updateUI();
-            saveData();
-        }
-
-        function updateUI() {
-            const btn = document.getElementById('main-step-btn');
-            const phaseBadge = document.getElementById('display-phase');
-            const phaseTxt = ["오전 대기", "오후 대기", "정산 대기"];
-            const btnTxt = ["오전 장 열기", "오후 장 열기", "다음 날로"];
-            const phaseClasses = ["phase-morning", "phase-afternoon", "phase-night"];
-            phaseBadge.innerText = phaseTxt[dayPhase];
-            btn.innerText = btnTxt[dayPhase];
-            phaseBadge.className = `phase-badge ${phaseClasses[dayPhase]}`;
-            document.getElementById('display-date').innerText = `제 ${currentDay} 일`;
-            renderStocks();
-            renderRankings();
-            if(!document.getElementById('view-management').classList.contains('hidden-view')) renderStudentList();
-            applyAdminUI();
-        }
-
-        function triggerPriceChange(timeName) {
-            let news = [];
-            addNews(`☀️ [장 열기] 제 ${currentDay} 일 ${timeName} 장이 시작되었습니다!`);
-            stocks.forEach(s => {
-                s.prev = s.price;
-                let change = 0;
-                const eventRoll = Math.random();
-                if (eventRoll < EXTREME_CHANCE) {
-                    const isSurge = Math.random() > 0.5;
-                    change = (isSurge ? 0.25 : -0.25) + (Math.random() * EXTREME_RANGE * 0.4);
-                    news.push(`${isSurge ? '🚀 [급등]' : '📉 [급락]'} ${s.name}: ${newsPool[isSurge ? 'surge' : 'crash'][s.id]}`);
-                    s.trend = isSurge ? 3 : -3;
-                } else {
-                    let baseChange = (Math.random() - 0.49) * 3.5 * s.vol;
-                    change = baseChange + (s.trend * 0.08);
-                    if(s.price < 1.0 && Math.random() > 0.6) change += 0.2; 
-                    if(s.trend > 0) s.trend -= 1; else if(s.trend < 0) s.trend += 1;
-                }
-                let changeAmt = s.price * change;
-                if (Math.abs(changeAmt) > 0 && Math.abs(changeAmt) < 0.1) changeAmt = change > 0 ? 0.1 : -0.1;
-                s.price = parseFloat((s.price + changeAmt).toFixed(1));
-                if(s.price < MIN_PRICE) s.price = MIN_PRICE;
-                
-                // [버그 수정] 가격 결정 직후 그래프 데이터 업데이트
-                if (timeName === "오전") {
-                    s.history.push(s.price);
-                } else {
-                    s.history[s.history.length - 1] = s.price;
-                }
-
-                if(s.history.length > 20) s.history.shift();
-            });
-            if (news.length === 0 && Math.random() < 0.4) news.push(`[시장 속보] ${newsPool.general[Math.floor(Math.random() * newsPool.general.length)]}`);
-            updateChart();
-            displayNews(news);
-        }
-
-        function processDailySettlement() {
-            currentDay++;
-            let news = [];
-            if (currentDay % SETTLEMENT_INTERVAL === 0) {
-                students.forEach(std => { if (std.cash > 0) std.cash = parseFloat((std.cash * (1 + INTEREST_RATE)).toFixed(1)); });
-                news.push(`🏦 [이자] 제 ${currentDay} 일! 지갑 잔고에 대해 10%의 이자가 지급되었습니다!`);
-                const sfStock = stocks.find(s => s.id === 'SF');
-                const haStock = stocks.find(s => s.id === 'HA');
-                const divSF = parseFloat((sfStock.price * (0.05 + Math.random() * 0.05)).toFixed(2));
-                const divHA = parseFloat((haStock.price * (0.05 + Math.random() * 0.05)).toFixed(2));
-                news.push(`📢 [배당] 제 ${currentDay} 일 배당 지급: 🍮${divSF}C / ⚔️${divHA}C (주당)`);
-                students.forEach(std => {
-                    if (std.holdings['SF']) std.cash = parseFloat((std.cash + (std.holdings['SF'].qty * divSF)).toFixed(1));
-                    if (std.holdings['HA']) std.cash = parseFloat((std.cash + (std.holdings['HA'].qty * divHA)).toFixed(1));
-                });
-            }
-            displayNews(news);
-        }
-
-        function renderRankings() {
-            if (students.length === 0) return;
-            let topAssetStd = null, maxAsset = -1, topProfitStd = null, maxProfit = -999999;
-            students.forEach(s => {
-                let stockValue = 0, profit = 0;
-                stocks.forEach(st => {
-                    if (s.holdings[st.id]) {
-                        const h = s.holdings[st.id];
-                        stockValue += (h.qty * st.price);
-                        profit += (st.price - h.avgPrice) * h.qty;
-                    }
-                });
-                const totalAsset = s.cash + stockValue;
-                if (totalAsset > maxAsset) { maxAsset = totalAsset; topAssetStd = s; }
-                if (profit > maxProfit) { maxProfit = profit; topProfitStd = s; }
-            });
-            document.getElementById('rank-asset-name').innerText = topAssetStd ? topAssetStd.name : "미등록";
-            document.getElementById('rank-asset-value').innerText = `${maxAsset.toFixed(1)} C`;
-            document.getElementById('rank-profit-name').innerText = topProfitStd ? topProfitStd.name : "미등록";
-            document.getElementById('rank-profit-value').innerText = `${maxProfit >= 0 ? '+' : ''}${maxProfit.toFixed(1)} C`;
-        }
-
-        function addStudent() {
-            const input = document.getElementById('new-student-name');
-            const name = input.value.trim();
-            if(!name || students.some(s => s.name === name)) return;
-            students.push({ name: name, cash: 0.0, holdings: {} });
-            input.value = '';
-            renderStudentList(); saveData();
-            addNews(`👤 [신규] '${name}' 모험가가 시장에 참가했습니다.`);
-        }
-
-        function openModal(index) {
-            activeStudentIndex = index;
-            const s = students[index];
-            document.getElementById('modal-student-name').innerText = s.name;
-            document.getElementById('modal-cash-display').innerText = s.cash.toFixed(1);
-            document.getElementById('modal-amount-input').value = '';
-            document.getElementById('modal-trade-quantity').value = '';
-            document.getElementById('student-modal').style.display = 'flex';
-            updateTradePrice();
-            renderModalInventory();
-            applyAdminUI();
-        }
-
-        function closeModal() { document.getElementById('student-modal').style.display = 'none'; activeStudentIndex = null; renderStudentList(); renderRankings(); }
-        function handleOverlayClick(e) { if(e.target.id === 'student-modal') closeModal(); }
-
-        function updateTradePrice() {
-            const sid = document.getElementById('modal-trade-stock-id').value;
-            const stk = stocks.find(x => x.id === sid);
-            if (stk) document.getElementById('modal-current-price-badge').innerText = `${stk.price.toFixed(1)} C`;
-        }
-
-        function adjustAsset(type) {
-            if(!isAdmin) return;
-            if(activeStudentIndex === null) return;
-            const amt = parseFloat(document.getElementById('modal-amount-input').value);
-            if(isNaN(amt)) return;
-            const s = students[activeStudentIndex];
-            s.cash = parseFloat((s.cash + amt).toFixed(1));
-            if(s.cash < 0) s.cash = 0;
-            document.getElementById('modal-cash-display').innerText = s.cash.toFixed(1);
-            document.getElementById('modal-amount-input').value = '';
-            renderStudentList(); renderRankings(); saveData();
-        }
-
-        function renderStudentList() {
-            const body = document.getElementById('student-list-body');
-            body.innerHTML = '';
-            students.forEach((s, idx) => {
-                let stockVal = 0, summary = "";
-                stocks.forEach(st => {
-                    const h = s.holdings[st.id];
-                    if (h && h.qty > 0) {
-                        stockVal += (h.qty * st.price);
-                        const bgColor = st.price >= h.avgPrice ? 'bg-rose-600' : 'bg-blue-600';
-                        summary += `<span class="${bgColor} px-2 py-1 rounded text-[12px] mr-1 border border-white/20 font-bold flex items-center gap-1 inline-flex shadow-sm"><span class="text-lg">${st.icon}</span> ${h.qty}</span>`;
-                    }
-                });
-                body.innerHTML += `<tr onclick="openModal(${idx})" class="student-row bg-slate-800/40 border border-slate-700/50 group transition-all font-bold">
-                    <td class="px-4 py-3 font-bold text-amber-100 group-hover:text-blue-400">${s.name}</td>
-                    <td class="px-4 py-3 text-right text-emerald-400 font-mono font-bold">${s.cash.toFixed(1)}C</td>
-                    <td class="px-4 py-3 font-bold">${summary || '<span class="text-slate-600 italic text-[9px] font-normal">비어있음</span>'}</td>
-                    <td class="px-4 py-3 text-right font-bold text-white font-mono">${(s.cash + stockVal).toFixed(1)}C</td>
-                </tr>`;
-            });
-            if(!students.length) body.innerHTML = '<tr><td colspan="4" class="py-12 text-center text-slate-500 italic font-bold">등록된 모험가가 없습니다.</td></tr>';
-        }
-
-        function renderModalInventory() {
-            const s = students[activeStudentIndex];
-            const container = document.getElementById('modal-inventory-list');
-            container.innerHTML = '';
-            Object.keys(s.holdings).forEach(id => {
-                const h = s.holdings[id];
-                const stk = stocks.find(x => x.id === id);
-                const curVal = (h.qty * stk.price).toFixed(1);
-                const profit = (curVal - (h.qty * h.avgPrice)).toFixed(1);
-                const isProfit = profit >= 0;
-                const profitColor = isProfit ? 'text-rose-400' : 'text-blue-400';
-                const cardBorder = isProfit ? 'border-rose-500/30' : 'border-blue-500/30';
-                container.innerHTML += `<div class="bg-slate-800/80 p-4 rounded-2xl border-2 ${cardBorder} flex justify-between items-center shadow-lg transition-transform hover:scale-[1.02] font-bold">
-                    <div class="flex items-center gap-4"><span class="text-5xl drop-shadow-md font-bold">${stk.icon}</span><div><p class="text-md font-bold text-white mb-1 font-bold font-bold">${stk.name}</p><p class="text-[10px] text-slate-400 font-mono uppercase font-bold font-bold">평단: ${h.avgPrice.toFixed(1)}C</p></div></div>
-                    <div class="text-right font-bold font-bold"><p class="text-sm text-emerald-400 font-mono font-bold font-bold font-bold">${curVal}C</p><p class="text-[10px] ${profitColor} tracking-tighter font-bold font-bold font-bold font-bold font-bold">${profit >= 0 ? '+' : ''}${profit}C 손익</p>
-                    <div class="bg-slate-700 px-3 py-1 rounded-xl border border-slate-600 flex flex-col items-center justify-center mt-1"><span class="text-[14px] font-bold text-white font-mono font-bold font-bold font-bold">${h.qty} 주</span></div></div></div>`;
-            });
-        }
-
-        function modalTrade(type) {
-            if(!isAdmin) return;
-            const s = students[activeStudentIndex];
-            const sid = document.getElementById('modal-trade-stock-id').value;
-            const qInput = document.getElementById('modal-trade-quantity');
-            const q = parseInt(qInput.value);
-            const stk = stocks.find(x => x.id === sid);
-            if(!q || q <= 0) return;
-            if(type === 'buy') {
-                const cost = parseFloat((stk.price * q).toFixed(1));
-                if(s.cash < cost) { alert("코인이 부족하여 매수할 수 없습니다!"); return; }
-                s.cash = parseFloat((s.cash - cost).toFixed(1));
-                if(!s.holdings[sid]) s.holdings[sid] = { qty: 0, avgPrice: 0 };
-                const h = s.holdings[sid]; h.avgPrice = parseFloat(((h.qty * h.avgPrice + cost) / (h.qty + q)).toFixed(1)); h.qty += q;
-            } else {
-                const h = s.holdings[sid]; if(!h || h.qty < q) { alert("수량이 부족합니다."); return; }
-                const sellTotal = parseFloat((stk.price * q).toFixed(1));
-                const netTotal = parseFloat((sellTotal - SELL_FEE).toFixed(1)); 
-                s.cash = parseFloat((s.cash + netTotal).toFixed(1)); h.qty -= q; if(!h.qty) delete s.holdings[sid];
-            }
-            document.getElementById('modal-cash-display').innerText = s.cash.toFixed(1);
-            qInput.value = ''; renderModalInventory(); renderRankings(); saveData();
-        }
-
-        function deleteStudentPrompt() { if(!isAdmin) return; if(confirm(`정말로 이 학생의 데이터를 영구 삭제하시겠습니까?`)) { students.splice(activeStudentIndex, 1); closeModal(); } }
-
-        function renderStocks() {
-            const body = document.getElementById('stock-list-body');
-            body.innerHTML = '';
-            stocks.forEach(s => {
-                const diff = parseFloat((s.price - s.prev).toFixed(1));
-                const color = diff >= 0 ? 'text-rose-500' : 'text-blue-500';
-                body.innerHTML += `<tr class="border-b border-slate-800/50 font-bold font-bold font-bold font-bold font-bold"><td class="py-4 px-2 font-bold">${s.icon} ${s.name} ${s.div ? '🎁' : ''}</td>
-                    <td class="py-4 text-right font-mono font-bold text-amber-200 font-bold font-bold font-bold">${s.price.toFixed(1)}</td>
-                    <td class="py-4 text-right font-mono ${color} text-xs font-bold font-bold font-bold">${diff >= 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(1)}</td></tr>`;
-            });
-        }
-
-        function initChart() {
-            const ctx = document.getElementById('mainChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: ['1일'], datasets: stocks.map((s, i) => ({
-                    label: s.name, data: s.history, borderColor: ['#f59e0b', '#3b82f6', '#10b981', '#a855f7', '#ef4444'][i],
-                    tension: 0.3, borderWidth: 3, pointRadius: 2
-                }))},
-                options: { responsive: true, maintainAspectRatio: false, 
-                    plugins: { legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { weight: 'bold' } } } },
-                    scales: { y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }, x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } } }
-                }
-            });
-        }
-
-        function updateChart() {
-            chart.data.labels = [];
-            for(let i=0; i<stocks[0].history.length; i++) {
-                chart.data.labels.push(`포인트 ${i+1}`);
-            }
-            stocks.forEach((s, i) => chart.data.datasets[i].data = s.history);
-            chart.update();
-        }
-
-        function populateSelects() {
-            const sel = document.getElementById('modal-trade-stock-id');
-            if(!sel) return; sel.innerHTML = "";
-            stocks.forEach(s => sel.innerHTML += `<option value="${s.id}">${s.icon} ${s.name}</option>`);
-        }
-
-        function addNews(msg) {
-            const container = document.getElementById('news-container');
-            const p = document.createElement('p');
-            let colorClass = 'border-blue-600 bg-slate-800/20 font-bold';
-            if (msg.includes("급등")) colorClass = 'border-yellow-500 bg-yellow-900/40 text-yellow-100 font-bold';
-            else if (msg.includes("급락")) colorClass = 'border-rose-600 bg-rose-900/40 text-rose-100 font-bold';
-            else if (msg.includes("배당")) colorClass = 'border-emerald-500 bg-emerald-900/20 text-emerald-100 font-bold';
-            else if (msg.includes("이자")) colorClass = 'border-cyan-400 bg-cyan-800/30 text-cyan-100 font-bold font-bold font-bold font-bold';
-            p.className = `border-l-4 ${colorClass} pl-3 py-2 rounded animate-in slide-in-from-left font-bold`;
-            p.innerText = msg;
-            container.prepend(p);
-        }
-
-        function displayNews(news) { news.forEach(n => addNews(n)); }
-
-        function saveData() {
-            const data = { currentDay, dayPhase, students, stocks: stocks.map(s => ({ id: s.id, price: s.price, history: s.history })) };
-            localStorage.setItem('hakmin_securities_v9_8', JSON.stringify(data));
-        }
-
-        function loadData() {
-            const saved = localStorage.getItem('hakmin_securities_v9_8');
-            if(saved) {
-                const data = JSON.parse(saved);
-                currentDay = data.currentDay; dayPhase = data.dayPhase || 0; students = data.students;
-                data.stocks.forEach(ds => {
-                    const st = stocks.find(s => s.id === ds.id);
-                    if(st) { 
-                        st.price = ds.price; 
-                        st.history = ds.history; 
-                        // [버그 수정] 히스토리 마지막 값과 현재가 강제 동기화
-                        if (st.history.length > 0) {
-                            st.history[st.history.length - 1] = st.price;
-                        }
-                        st.prev = st.history[st.history.length - 2] || st.price; 
-                    }
-                });
-                updateChart();
-                renderStocks();
-                renderRankings();
-            }
-        }
-    </script>
+    // --- 이하 로직 동일 ---
+    function handleAdminClick() { if (isAdminMode) { isAdminMode = false; applyAdmin(); showMsg("해제"); } else { openModal('passwordModal'); } }
+    function checkAdminPassword() { if (document.getElementById('adminPassword').value === '1234') { isAdminMode = true; applyAdmin(); closeModal('passwordModal'); showMsg("성공"); } else { showMsg("실패"); } document.getElementById('adminPassword').value = ''; }
+    function applyAdmin() { const toggle = document.getElementById('adminToggle'); if(toggle) toggle.checked = isAdminMode; document.body.classList.toggle('admin-mode', isAdminMode); render(); }
+    function switchView(v, id = null) { activeView = v; activePageId = id; render(); }
+    function openModal(id) { 
+        if (id === 'conceptModal' && activePageId) document.getElementById('editConcept').value = pages.find(p => p.id === activePageId).mathConcepts;
+        if (id === 'editInfoModal' && activePageId) { const p = pages.find(p => p.id === activePageId); document.getElementById('editSubject').value = p.subject; document.getElementById('editUrl').value = p.url; }
+        document.getElementById(id).style.display = 'flex'; 
+    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function openDeleteModal(t, id, s = null) { if (!isAdminMode) return; deleteContext = { type: t, id, subType: s }; openModal('confirmDeleteModal'); }
+    async function executeDelete() {
+        const { type, id, subType } = deleteContext;
+        if (type === 'project') await db.collection("projects").doc(id).delete();
+        else if (type === 'feedback') { const p = pages.find(p => p.id === activePageId); const nl = p[subType].filter(f => f.id !== id); await db.collection("projects").doc(activePageId).update({ [subType]: nl }); }
+        else if (type === 'idea') await db.collection("ideas").doc(id).delete();
+        closeModal('confirmDeleteModal'); showMsg("완료");
+    }
+    async function addPage() {
+        const s = document.getElementById('newSubject').value; const u = document.getElementById('newUrl').value;
+        await db.collection("projects").add({ subject: s, url: u, rating: 0, mathConcepts: '', improvements: [], bugs: [], createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('createModal');
+    }
+    async function saveInfo() { const s = document.getElementById('editSubject').value; const u = document.getElementById('editUrl').value; await db.collection("projects").doc(activePageId).update({ subject: s, url: u }); closeModal('editInfoModal'); }
+    async function saveConcept() { const c = document.getElementById('editConcept').value; await db.collection("projects").doc(activePageId).update({ mathConcepts: c }); closeModal('conceptModal'); }
+    async function setRating(v) { await db.collection("projects").doc(activePageId).update({ rating: v }); }
+    async function addFeedback(type) {
+        const u = document.getElementById(type === 'improvements' ? 'impU' : 'bugU').value;
+        const t = document.getElementById(type === 'improvements' ? 'impT' : 'bugT').value;
+        if (!u || !t) return;
+        const p = pages.find(p => p.id === activePageId);
+        const nl = [...(p[type] || []), { id: 'f' + Date.now(), user: u, text: t, coins: 0 }];
+        await db.collection("projects").doc(activePageId).update({ [type]: nl });
+    }
+    async function submitIdea() {
+        const u = document.getElementById('ideaUser').value; const unit = document.getElementById('ideaUnit').value;
+        const game = document.getElementById('ideaGame').value; const learn = document.getElementById('ideaLearn').value;
+        await db.collection("ideas").add({ user: u[0]+"*"+u.slice(2), unit, game, learn, coins: 0, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        closeModal('ideaModal');
+    }
+    function openRewardModal(id) { rewardTargetId = id; document.getElementById('coinAmount').value = ideas.find(i => i.id === id).coins || 0; openModal('rewardModal'); }
+    async function confirmReward() { const a = parseInt(document.getElementById('coinAmount').value); await db.collection("ideas").doc(rewardTargetId).update({ coins: a }); closeModal('rewardModal'); }
+    function openRenameModal(id) { renameTargetId = id; document.getElementById('renameInput').value = pages.find(p => p.id === id).subject; openModal('renameModal'); }
+    async function confirmRename() { const t = document.getElementById('renameInput').value; await db.collection("projects").doc(renameTargetId).update({ subject: t }); closeModal('renameModal'); }
+    function showMsg(t) { const b = document.getElementById('msgBox'); b.innerText = t; b.style.display = 'block'; setTimeout(() => b.style.display = 'none', 2000); }
+    function escapeHtml(s) { if(!s) return ""; return s.replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;" }[m])); }
+    window.onload = initApp;
+</script>
 </body>
 </html>
