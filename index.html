@@ -258,7 +258,7 @@
     }
 
     function handleAdminClick() { if (isAdminMode) { isAdminMode = false; applyAdmin(); showMsg("해제"); } else { openModal('passwordModal'); } }
-    function checkAdminPassword() { if (document.getElementById('adminPassword').value === '1234') { isAdminMode = true; applyAdmin(); closeModal('passwordModal'); showMsg("성공"); } else { showMsg("실패"); } document.getElementById('adminPassword').value = ''; }
+    function checkAdminPassword() { if (document.getElementById('adminPassword').value === '5105') { isAdminMode = true; applyAdmin(); closeModal('passwordModal'); showMsg("성공"); } else { showMsg("실패"); } document.getElementById('adminPassword').value = ''; }
     function applyAdmin() { const toggle = document.getElementById('adminToggle'); if(toggle) toggle.checked = isAdminMode; document.body.classList.toggle('admin-mode', isAdminMode); render(); }
     function switchView(v, id = null) { activeView = v; activePageId = id; render(); }
     function openModal(id) { 
